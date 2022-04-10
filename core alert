@@ -1,0 +1,35 @@
+#!/bin/bash
+
+
+mynum=yournumber@smsgateway-or-email
+name=$BASH_SOURCE
+prog=$(echo $name  | tr -dc '[:alnum:]\n\r' | tr '[:upper:]' '[:lower:]')
+
+
+
+core0temp=$(sensors coretemp-isa-0000 -A | grep "Core 0"  | awk '{print $3}'| sed s/+// | sed s/°C// | sed s/.0//  )
+core1temp=$(sensors coretemp-isa-0000 -A | grep "Core 1"  | awk '{print $3}'| sed s/+// | sed s/°C// | sed s/.0//  )
+coretemp=$(echo $(($core0temp + $core1temp)) )
+
+coretempaverege=$(echo $(($coretemp / 2)) )
+truetemp=$coretempaverege
+
+hightemp=86
+
+echo "Core0 Temp: $core0temp"
+echo "Core1 Temp: $core1temp"
+echo "Avrege Core Temp: $coretempaverege"
+
+
+if (( $(echo "$truetemp > $hightemp" | bc -l) )); then 
+ echo core temperture is at  HIGH Temperture range
+ echo Sending Notification to Admin ; sleep 2
+ {
+ echo Subject:HIGH CPU TEMP!!! Alert,
+ echo  $(echo $prog)   Your Computer's ($HOSTNAME) CPU is currently at a high  temperture [$truetemp Celcius] consider 
+ echo turning off your computer to avoid damaging it
+ } | sendmail $mynum
+
+else
+  echo "Core Temperture is fine"  ; exit
+fi
